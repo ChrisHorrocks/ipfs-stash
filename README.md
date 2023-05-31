@@ -11,9 +11,9 @@ IPFS Stash is a small utility for adding files to a private IPFS Cluster.
 
 Stash initially perform an 'ipfs add' locally to obtain the CID before using 'ipfs-cluster-ctl' to instruct the private IPFS-Cluster to pin & replicate the CID.
 
-It then replaces the original file with a small script, with the same name as the original file, which when executed performs an 'ipfs get' on the CID stored within it.
+It then replaces the original file with a small script, with the same name as the original file, which when executed performs an 'ipfs get' on the CID stored within it before deleting itself.
 
-The original filename, CID and file extension are then saved into an sqlite database in '~/.ipfs-stash/' for future reference. Stash currently doesn't do anything with this data but if you ever lose a script that contains the original file CID you'll be glad you have it.
+The original filename, CID and file extension are then saved into an sqlite database in '~/.ipfs-stash/' for future reference. Stash currently doesn't do anything with this data but if you ever lose a script that contains the original file CID you can retrieve it from the database with: sqlite ~/.ipfs-stash/filestore.db "select 1 from files where filename="original-files-name"'
 
 THIS IS AN EXPERRIMENTAL TOOL, NO WARRANTY IS PROVIDED, USE AT YOUR OWN RISK.
 
