@@ -13,6 +13,17 @@ Stash initially perform an 'ipfs add' locally to obtain the CID before using 'ip
 
 It then replaces the original file with a small script, with the same name as the original file, which when executed performs an 'ipfs get' on the CID stored within it.
 
+The original filename, CID and file extension are then saved into an sqlite database in '~/.ipfs-stash/' for future reference. Stash currently doesn't do anything with this data but if you ever lose a script that contains the original file CID you'll be glad you have it.
+
+THIS IS AN EXPERRIMENTAL TOOL, NO WARRANTY IS PROVIDED, USE AT YOUR OWN RISK.
+
+INSTALLATION
+'cp stash /usr/local/bin'
+'chmod u+x /usr/local/bin/stash'
+
+REMOVAL
+'rm /usr/local/bin/stash'
+'rm ~/.ipfs-stash'
 
 TODO:
  - opt to disable pinning in local IPFS cluster for archiving files that're no longere required locally
