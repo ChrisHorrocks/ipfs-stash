@@ -95,17 +95,6 @@ EOF
     exit 1
   fi
 
-  FILE_SIZE=$(ls -l $OBJECT | awk '{print $5}')
-  DISK_FREE=$(df $IPFS_PATH | awk 'NR==2{print $4}')
-
-  # check that there is sufficient free space on the IPFS repo mount to add the file
-  if (( $FILE_SIZE > $DISK_FREE)); then
-    cat << EOF
-    Error: Insufficient space on IPFS repo mount.
-    Resolution: Make additional space available.
-EOF
-  fi
-
   # add file to local IPFS repo
   IPFS_OBJECT_CID=$(ipfs add --quiet --pin=true $OBJECT)
   
