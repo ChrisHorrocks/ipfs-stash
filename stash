@@ -1,0 +1,132 @@
+#!/usr/bin/env bash
+#
+#  ___ ____  _____ ____    ____  _            _     
+# |_ _|  _ \|  ___/ ___|  / ___|| |_ __ _ ___| |__  
+#  | || |_) | |_  \___ \  \___ \| __/ _` / __| '_ \ 
+#  | ||  __/|  _|  ___) |  ___) | || (_| \__ \ | | |
+# |___|_|   |_|   |____/  |____/ \__\__,_|___/_| |_|
+#
+
+# TODO:
+# - opt to disable pinning in local IPFS cluster for archiving files that're no longere required locally
+# - opt specify additional tags for database
+# - parameterise pin replicas
+# - opt to not replace original file for files that're still needed locally
+
+usage(){
+    cat << EOF
+IPFS Stash
+
+  Author:
+    Chris Horrocks
+
+  Description:
+    Utility for putting data into local IPFS repo & pinning it to a remote private IPFS cluster.
+
+  Version:
+    0.2
+
+  Requires:
+    ipfs v0.20.0
+    ipfs-cluster-ctl v1.0.6
+
+  Arguments:
+    -h             help.
+    -i             Initalise the stash databse.
+
+  Syntax:
+    stash [-h | -i] <file>
+
+NO WARRANTY PROVIDED. USE AT OWN RISK.
+EOF
+  exit 0
+}
+
+local_stash_init() {
+  # purge existing ipfs-stash dir
+  rm -rf ~/.ipfs-stash
+
+  # setup new ipfs-stash dir & database
+  mkdir -p ~/.ipfs-stash
+  sqlite3 ~/.ipfs-stash/filestore.db "create table files(filename text, hash text, extension text, UNIQUE(hash));"
+  exit 0
+}
+
+while getopts ':hi' flag; do
+  case "${flag}" in
+    h) usage;;
+    i) local_stash_init;;
+    ?) usage;;
+    \?) usage;;
+  esac
+done
+shift "$(($OPTIND -1))"
+OBJECT=$1
+IPFS_PATH="~/.ipfs"
+
+local_ipfs_add() {
+  # check that the object is a file
+  if [ ! -f $OBJECT ]; then
+  cat << EOF
+    Error: IPFS Stash does not currently support directories!
+    Resolution: Please run IPFS stash against files only.
+    Quitting.
+EOF
+    exit 1
+  fi
+
+  # check if IPFS is installed
+  if ! type ipfs > /dev/null; then
+  cat << EOF
+    Error: IPFS could not be found!
+    Resolution: Please install ipfs.
+    Quitting.
+EOF
+    exit 1
+  fi
+
+  # check if IPFS is initialised properly
+  if [ ! -d $IPFS_PATH ]; then
+    cat << EOF
+    Error: IPFS repo could not be located!
+    Resolution: Please run 'ipfs init' or set IPFS_PATH environment variable.
+    Quitting.
+EOF
+    exit 1
+  fi
+
+  FILE_SIZE=$(ls -l $OBJECT | awk '{print $5}')
+  DISK_FREE=$(df $IPFS_PATH | awk 'NR==2{print $4}')
+
+  # check that there is sufficient free space on the IPFS repo mount to add the file
+  if (( $FILE_SIZE > $DISK_FREE)); then
+    cat << EOF
+    Error: Insufficient space on IPFS repo mount.
+    Resolution: Make additional space available.
+EOF
+  fi
+
+  # add file to local IPFS repo
+  IPFS_OBJECT_CID=$(ipfs add --quiet --pin=true $OBJECT)
+  
+  # check if the CID exists in the database (to prevent duplicates)
+  sqlite3 ~/.ipfs-stash/filestore.db "INSERT OR IGNORE INTO files values('$OBJECT','$IPFS_OBJECT_CID', '${OBJECT#*.}') ;"
+
+  # Pin the CID within the cluster
+  ipfs-cluster-ctl --host "/ip4/10.0.0.10/tcp/9094" pin add -r 2 -n $OBJECT $IPFS_OBJECT_CID
+ 
+  if [ -f $OBJECT".stored" ]; then
+    rm $OBJECT".stored"
+  fi
+  cat > $OBJECT".stored" << EOF
+#!/usr/bin/env bash
+ipfs get --output=$OBJECT $IPFS_OBJECT_CID
+rm \$0
+EOF
+  chmod u+x $OBJECT".stored"
+  rm $OBJECT
+  exit 0
+}
+
+# Main
+local_ipfs_add
