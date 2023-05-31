@@ -9,7 +9,7 @@
 
 IPFS Stash is a small utility for adding files to a private IPFS Cluster. 
 
-Stash initially perform an 'ipfs add' locally to obtain the CID before using 'ipfs-cluster-ctl' to instruct the private IPFS-Cluster to pin & replicate the CID.
+Stash initially perform an 'ipfs add' locally to obtain the CID before using 'ipfs-cluster-ctl' to instruct the private IPFS luster to pin & replicate the CID.
 
 It then replaces the original file with a small script, with the same name as the original file, which when executed performs an 'ipfs get' on the CID stored within it before deleting itself.
 
