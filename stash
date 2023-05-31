@@ -24,7 +24,7 @@ IPFS Stash
     Utility for putting data into local IPFS repo & pinning it to a remote private IPFS cluster.
 
   Version:
-    0.2
+    0.3
 
   Requires:
     ipfs v0.20.0
@@ -65,55 +65,25 @@ OBJECT=$1
 IPFS_PATH="~/.ipfs"
 
 local_ipfs_add() {
-  # check that the object is a file
-  if [ ! -f $OBJECT ]; then
-  cat << EOF
-    Error: IPFS Stash does not currently support directories!
-    Resolution: Please run IPFS stash against files only.
-    Quitting.
-EOF
-    exit 1
-  fi
-
-  # check if IPFS is installed
-  if ! type ipfs > /dev/null; then
-  cat << EOF
-    Error: IPFS could not be found!
-    Resolution: Please install ipfs.
-    Quitting.
-EOF
-    exit 1
-  fi
-
-  # check if IPFS is initialised properly
-  if [ ! -d $IPFS_PATH ]; then
-    cat << EOF
-    Error: IPFS repo could not be located!
-    Resolution: Please run 'ipfs init' or set IPFS_PATH environment variable.
-    Quitting.
-EOF
-    exit 1
-  fi
-
   # add file to local IPFS repo
-  IPFS_OBJECT_CID=$(ipfs add --quiet --pin=true $OBJECT)
+  IPFS_OBJECT_CID=$(ipfs add --quiet --pin=true "$OBJECT")
   
   # check if the CID exists in the database (to prevent duplicates)
   sqlite3 ~/.ipfs-stash/filestore.db "INSERT OR IGNORE INTO files values('$OBJECT','$IPFS_OBJECT_CID', '${OBJECT#*.}') ;"
 
   # Pin the CID within the cluster
-  ipfs-cluster-ctl --host "/ip4/10.0.0.10/tcp/9094" pin add -r 2 -n $OBJECT $IPFS_OBJECT_CID
+  ipfs-cluster-ctl --host "/ip4/10.0.0.10/tcp/9094" pin add -r 2 -n "$OBJECT" $IPFS_OBJECT_CID
  
-  if [ -f $OBJECT".stored" ]; then
-    rm $OBJECT".stored"
+  if [ -f "$OBJECT"".stored" ]; then
+    rm "$OBJECT"".stored"
   fi
-  cat > $OBJECT".stored" << EOF
+  cat > "$OBJECT"".stored" << EOF
 #!/usr/bin/env bash
-ipfs get --output=$OBJECT $IPFS_OBJECT_CID
-rm \$0
+ipfs get --output="$OBJECT" $IPFS_OBJECT_CID
+rm "\$0"
 EOF
-  chmod u+x $OBJECT".stored"
-  rm $OBJECT
+  chmod u+x "$OBJECT"".stored"
+  rm "$OBJECT"
   exit 0
 }
 
