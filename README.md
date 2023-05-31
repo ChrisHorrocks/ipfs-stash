@@ -31,3 +31,4 @@ TODO:
  - parameterise pin replicas
  - opt to not replace original file for files that're still needed locally
  - restore preflight sanity checks for local ipfs environment, file type, available disk space in local ipfs repo
+ - opt for adding tags to a file to enable faceted search in the database
