@@ -74,8 +74,10 @@ local_ipfs_add() {
   cat > "$OBJECT"".stored" << EOF
 #!/usr/bin/env bash
 ipfs get --output="$OBJECT" $IPFS_OBJECT_CID
+open "$OBJECT"
+exit 0
 EOF
-  chmod u+x "$OBJECT"".stored"
+  chmod u+x "$OBJECT"".sh"
   rm "$OBJECT"
   exit 0
 }
